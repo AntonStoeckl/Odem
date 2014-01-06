@@ -1,0 +1,21 @@
+{
+    "name": "antonstoeckl/odem",
+    "description": "Odem - A simple ODM for MongoDB",
+    "license": "private",
+    "keywords": [
+        "ORM", "ODM"
+    ],
+    "homepage": "https://github.com/AntonStoeckl/odem",
+    "repositories":[
+    ],
+    "minimum-stability":"dev",
+    "require": {
+        "php": ">=5.5.3@stable",
+        "beberlei/assert": "v1.4"
+    },
+    "autoload": {
+        "psr-0": {
+            "antonstoeckl":["lib", "src"]
+        }
+    }
+}
