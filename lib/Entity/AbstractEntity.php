@@ -3,6 +3,7 @@
 namespace Odem\Entity;
 
 use Odem\Assert\Assertion;
+use Odem\Assert\Property as PropertyAssertion;
 
 /**
  * Class AbstractEntity
@@ -56,7 +57,12 @@ abstract class AbstractEntity
         Assertion::string($property, "Expected 'property' to be a string");
         Assertion::notEmpty($property, "Expected 'property' to be a not empty string");
 
-        $this->assertValidPropertyDefinition($property);
+        PropertyAssertion::assertValidPropertyDefinition(
+            $this->defaultMappings,
+            $this->getMapping(),
+            $property,
+            $this->getEntityName()
+        );
 
         switch ($action) {
             case 'set':
@@ -79,13 +85,25 @@ abstract class AbstractEntity
     }
 
     /**
+     * @return string
+     */
+    final protected function getEntityName()
+    {
+        $entityClass = get_class($this);
+        $entityName = array_shift(explode('\\', $entityClass));
+
+        return $entityName;
+    }
+
+    /**
      * @param string $property
      * @param mixed $value
      * @return $this
      */
     final protected function doSet($property, $value)
     {
-        $this->assertValueIsValidType($property, $value);
+        $propertyMapping = $this->getMappingForProperty($property);
+        PropertyAssertion::assertValueIsValidType($propertyMapping, $this->defaultMappings, $value);
 
         $this->data[$property] = $value;
 
@@ -110,7 +128,7 @@ abstract class AbstractEntity
 
         $itemType = $mapping[$property]['itemType'];
 
-        $this->assertValueIsType($value, $itemType);
+        PropertyAssertion::assertValueIsType($value, $itemType);
 
         $this->data[$property][] = $value;
 
@@ -145,61 +163,11 @@ abstract class AbstractEntity
 
     /**
      * @param string $property
-     * @param mixed $value
-     */
-    final public function assertValueIsValidType($property, $value)
-    {
-        $mapping = $this->getMappingForProperty($property);
-        $propertyType = $mapping['type'];
-
-        $this->assertKnownPropertyType($propertyType);
-
-        $this->assertValueIsType($value, $propertyType);
-    }
-
-    /**
-     * @param mixed $value
-     * @param string $type
-     * @throws \Assert\InvalidArgumentException
-     * @throws \UnexpectedValueException
-     */
-    final public function assertValueIsType($value, $type)
-    {
-        switch ($type) {
-            case 'integer':
-                Assertion::integerish($value, "Expected integer value, got: " . gettype($value));
-                break;
-            case 'float':
-                Assertion::numeric($value, "Expected float value, got: " . gettype($value));
-                break;
-            case 'bool':
-                Assertion::boolean($value, "Expected boolean value, got: " . gettype($value));
-                break;
-            case 'string':
-                Assertion::string($value, "Expected string value, got: " . gettype($value));
-                break;
-            case 'array':
-                Assertion::isArray($value, "Expected array value, got: " . gettype($value));
-                break;
-            case 'entity':
-                Assertion::isInstanceOf(
-                    $value,
-                    'Odem\\Entity\\AbstractEntity',
-                    "Expected value of type [entity], got: gettype($value)"
-                );
-                break;
-            default:
-                throw new \UnexpectedValueException("Assertion missing for property type: [{$type}]");
-        }
-    }
-
-    /**
-     * @param string $property
      * @param bool $plain
      * @return array
      * @throws \Assert\InvalidArgumentException
      */
-    final public function getMappingForProperty($property, $plain = false)
+    final protected function getMappingForProperty($property, $plain = false)
     {
         $entityMapping = $this->getMapping();
         Assertion::keyExists($property, $entityMapping, "Property [{$property}] not defined in this entity");
@@ -220,7 +188,7 @@ abstract class AbstractEntity
      * @return array
      * @throws \Assert\InvalidArgumentException
      */
-    final public function getDefaultMappingForType($type)
+    final protected function getDefaultMappingForType($type)
     {
         Assertion::keyExists($type, $this->defaultMappings, "No default mapping defined for type [{$type}]");
 
@@ -233,7 +201,7 @@ abstract class AbstractEntity
      * @return $this
      * @throws \Assert\InvalidArgumentException
      */
-    final public function addDefaultMapping($type, array $mapping)
+    final private function addDefaultMapping($type, array $mapping)
     {
         Assertion::string($type, "Expected 'type' to be a string");
         Assertion::notEmpty($type, "Expected 'type' to be not empty");
@@ -282,44 +250,7 @@ abstract class AbstractEntity
     }
 
     /**
-     * Assert that property has a valid definition in entity
-     *
-     * @param string $property
-     * @throws \Assert\InvalidArgumentException
+     * @return array
      */
-    final public function assertValidPropertyDefinition($property)
-    {
-        $mapping = $this->getMapping();
-        $entityClass = get_class($this);
-        $entityName = array_shift(explode('\\', $entityClass));
-
-        Assertion::keyExists(
-            $property,
-            $mapping,
-            "Property [{$property}] is not defined in entity [{$entityName}]"
-        );
-
-        Assertion::keyExists(
-            'type',
-            $mapping[$property],
-            "Property [{$property}] has no field [type] in entity [{$entityName}]"
-        );
-
-        $this->assertKnownPropertyType($mapping[$property]['type']);
-    }
-
-    /**
-     * @param string $type
-     * @throws \Assert\InvalidArgumentException
-     */
-    final protected function assertKnownPropertyType($type)
-    {
-        Assertion::choice(
-            $type,
-            array_keys($this->defaultMappings),
-            "Unknown property type: [{$type}]"
-        );
-    }
-
     abstract public function getMapping();
 }
