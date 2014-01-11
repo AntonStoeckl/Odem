@@ -29,7 +29,7 @@ abstract class AbstractEntity
      * The constructor.
      * Initializes default mappings.
      */
-    protected function __construct()
+    public function __construct()
     {
         $this->addDefaultMappings();
     }
@@ -41,7 +41,7 @@ abstract class AbstractEntity
      * @throws \BadMethodCallException
      * @throws \Assert\InvalidArgumentException
      */
-    final public function __call($method, array $params)
+    public function __call($method, array $params)
     {
         $tokens = preg_split('/(?=[A-Z])/', $method);
 
@@ -87,7 +87,7 @@ abstract class AbstractEntity
     /**
      * @return string
      */
-    final protected function getEntityName()
+    protected function getEntityName()
     {
         $entityClass = get_class($this);
         $entityName = array_shift(explode('\\', $entityClass));
@@ -100,7 +100,7 @@ abstract class AbstractEntity
      * @param mixed $value
      * @return $this
      */
-    final protected function doSet($property, $value)
+    protected function doSet($property, $value)
     {
         $propertyMapping = $this->getMappingForProperty($property);
         PropertyAssertion::assertValueIsValidType($propertyMapping, $this->defaultMappings, $value);
@@ -115,7 +115,7 @@ abstract class AbstractEntity
      * @param mixed $value
      * @return $this
      */
-    final protected function doAdd($property, $value)
+    protected function doAdd($property, $value)
     {
         $mapping = $this->getMapping();
         $type = $mapping[$property]['type'];
@@ -139,7 +139,7 @@ abstract class AbstractEntity
      * @param string $property
      * @return mixed
      */
-    final protected function doGet($property)
+    protected function doGet($property)
     {
         if (isset($this->data[$property]) || array_key_exists($property, $this->data)) {
             return $this->data[$property];
@@ -152,7 +152,7 @@ abstract class AbstractEntity
      * @param string $property
      * @return bool|null
      */
-    final protected function doIs($property)
+    protected function doIs($property)
     {
         if (isset($this->data[$property]) || array_key_exists($property, $this->data)) {
             return $this->data[$property];
@@ -167,7 +167,7 @@ abstract class AbstractEntity
      * @return array
      * @throws \Assert\InvalidArgumentException
      */
-    final protected function getMappingForProperty($property, $plain = false)
+    protected function getMappingForProperty($property, $plain = false)
     {
         $entityMapping = $this->getMapping();
         Assertion::keyExists($property, $entityMapping, "Property [{$property}] not defined in this entity");
@@ -188,7 +188,7 @@ abstract class AbstractEntity
      * @return array
      * @throws \Assert\InvalidArgumentException
      */
-    final protected function getDefaultMappingForType($type)
+    protected function getDefaultMappingForType($type)
     {
         Assertion::keyExists($type, $this->defaultMappings, "No default mapping defined for type [{$type}]");
 
@@ -201,14 +201,14 @@ abstract class AbstractEntity
      * @return $this
      * @throws \Assert\InvalidArgumentException
      */
-    final private function addDefaultMapping($type, array $mapping)
+    protected function addDefaultMapping($type, array $mapping)
     {
         Assertion::string($type, "Expected 'type' to be a string");
         Assertion::notEmpty($type, "Expected 'type' to be not empty");
-        Assertion::keyExists('nullable', $mapping, "Mapping has no field [nullable]");
-        Assertion::keyNotExists($type, $this->defaultMappings, "Mapping for [{$type}] already exists");
+        Assertion::keyExists($mapping, 'nullable', "Mapping has no field [nullable]");
+        Assertion::keyNotExists($this->defaultMappings, $type, "Mapping for [{$type}] already exists");
 
-        $this->defaultMappings[$type] = $mapping['mapping'];
+        $this->defaultMappings[$type] = $mapping;
 
         return $this;
     }
@@ -216,7 +216,7 @@ abstract class AbstractEntity
     /**
      * Add default mappings
      */
-    final private function addDefaultMappings()
+    protected function addDefaultMappings()
     {
         $this->addDefaultMapping(
             'integer',
