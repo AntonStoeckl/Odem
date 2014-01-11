@@ -170,7 +170,7 @@ abstract class AbstractEntity
     protected function getMappingForProperty($property, $plain = false)
     {
         $entityMapping = $this->getMapping();
-        Assertion::keyExists($property, $entityMapping, "Property [{$property}] not defined in this entity");
+        Assertion::keyExists($entityMapping, $property, "Property [{$property}] not defined in this entity");
         $propertyMapping = $entityMapping[$property];
         $propertyType = $propertyMapping['type'];
 
@@ -190,7 +190,9 @@ abstract class AbstractEntity
      */
     protected function getDefaultMappingForType($type)
     {
-        Assertion::keyExists($type, $this->defaultMappings, "No default mapping defined for type [{$type}]");
+        Assertion::string($type, "Expected 'type' to be a string");
+        Assertion::notEmpty($type, "Expected 'type' to be not empty");
+        Assertion::keyExists($this->defaultMappings, $type, "No default mapping defined for type [{$type}] defined");
 
         return $this->defaultMappings[$type];
     }
@@ -206,7 +208,7 @@ abstract class AbstractEntity
         Assertion::string($type, "Expected 'type' to be a string");
         Assertion::notEmpty($type, "Expected 'type' to be not empty");
         Assertion::keyExists($mapping, 'nullable', "Mapping has no field [nullable]");
-        Assertion::keyNotExists($this->defaultMappings, $type, "Mapping for [{$type}] already exists");
+        Assertion::keyNotExists($this->defaultMappings, $type, "Mapping for type [{$type}] already exists");
 
         $this->defaultMappings[$type] = $mapping;
 
