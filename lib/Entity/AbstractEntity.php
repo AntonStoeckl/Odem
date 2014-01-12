@@ -4,6 +4,7 @@ namespace Odem\Entity;
 
 use Odem\Assert\Assertion;
 use Odem\Assert\Property as PropertyAssertion;
+use Odem\Assert\ProperyAssertionInterface;
 
 /**
  * Class AbstractEntity
@@ -15,14 +16,13 @@ abstract class AbstractEntity
     const UNDEF = '__IS_NOT_DEFINED__';
     const PHP_MAX_STR_LEN = 2147483647;
 
-    /**
-     * @var array
-     */
+    /** @var  ProperyAssertionInterface */
+    protected $propertyAssertions;
+
+    /**  @var array */
     protected $defaultMappings = array();
 
-    /**
-     * @var array
-     */
+    /** @var array */
     protected $data = array();
 
     /**
@@ -32,6 +32,29 @@ abstract class AbstractEntity
     public function __construct()
     {
         $this->addDefaultMappings();
+    }
+
+    /**
+     * @param ProperyAssertionInterface $propertyAssertions
+     * @return $this
+     */
+    public function setPropertyAssertions(ProperyAssertionInterface $propertyAssertions)
+    {
+        $this->propertyAssertions = $propertyAssertions;
+
+        return $this;
+    }
+
+    /**
+     * @return ProperyAssertionInterface
+     */
+    public function getPropertyAssertions()
+    {
+        if (empty($this->propertyAssertions)) {
+            $this->propertyAssertions = new PropertyAssertion();
+        }
+
+        return $this->propertyAssertions;
     }
 
     /**
@@ -90,7 +113,8 @@ abstract class AbstractEntity
     protected function getEntityName()
     {
         $entityClass = get_class($this);
-        $entityName = array_shift(explode('\\', $entityClass));
+        $parts = explode('\\', $entityClass);
+        $entityName = array_shift($parts);
 
         return $entityName;
     }
@@ -103,7 +127,8 @@ abstract class AbstractEntity
     protected function doSet($property, $value)
     {
         $propertyMapping = $this->getMappingForProperty($property);
-        PropertyAssertion::assertValueIsValidType($propertyMapping, $this->defaultMappings, $value);
+        $propertyAssertions = $this->getPropertyAssertions();
+        $propertyAssertions::assertValueIsValidType($propertyMapping, $this->defaultMappings, $value);
 
         $this->data[$property] = $value;
 

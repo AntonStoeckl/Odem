@@ -6,7 +6,7 @@ namespace Odem\Assert;
  * Class Property
  * @package Odem\Assert
  */
-class Property
+class Property implements ProperyAssertionInterface
 {
     /**
      * @param array $propertyMapping

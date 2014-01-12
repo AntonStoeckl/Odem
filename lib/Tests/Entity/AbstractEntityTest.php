@@ -26,6 +26,13 @@ class AbstractEntityTest extends TestCase
     protected $sutNothing;
 
     /**
+     * SystemUnderTest mock instance with mehod "getMappingsForProperty" mocked
+     *
+     * @var AbstractEntity|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $sutGetMappingForProperty;
+
+    /**
      * Set up test instances.
      */
     public function setUp()
@@ -36,6 +43,11 @@ class AbstractEntityTest extends TestCase
 
         $this->sutNothing = $this->getMockBuilder('Odem\Entity\AbstractEntity')
             ->setMethods(array('_notExistingMethod_'))
+            ->disableOriginalConstructor()
+            ->getMockForAbstractClass();
+
+        $this->sutGetMappingForProperty = $this->getMockBuilder('Odem\Entity\AbstractEntity')
+            ->setMethods(array('getMappingForProperty'))
             ->disableOriginalConstructor()
             ->getMockForAbstractClass();
     }
@@ -64,19 +76,23 @@ class AbstractEntityTest extends TestCase
      */
     public function testAddDefaultMappingsSuccessCase()
     {
+        // the expected keys in $this->defaultMappings after call to addDefaultMappings()
+        $expectedTypes = array('integer', 'float', 'bool', 'string', 'array', 'entity');
+
         /** @var AbstractEntity|\PHPUnit_Framework_MockObject_MockObject $sut */
         $sut = $this->getMockBuilder('Odem\Entity\AbstractEntity')
             ->setMethods(array('addDefaultMapping'))
             ->disableOriginalConstructor()
             ->getMockForAbstractClass();
 
-        $sut->expects($this->atLeastOnce())
-            ->method('addDefaultMapping')
-            ->with($this->isType('string'), $this->isType('array'));
+        foreach ($expectedTypes as $index => $type) {
+            $sut->expects($this->at($index))
+                ->method('addDefaultMapping')
+                ->with($type, $this->isType('array'));
+        }
 
         $sutMethod = new \ReflectionMethod($sut, 'addDefaultMappings');
         $sutMethod->setAccessible(true);
-
         $sutMethod->invoke($sut);
     }
 
@@ -222,12 +238,10 @@ class AbstractEntityTest extends TestCase
      * @covers Odem\Entity\AbstractEntity::getMappingForProperty()
      * @small
      */
-    public function testGetMappingForPropertySuccessCase()
+    public function testGetMappingForPropertyNotPlainSuccessCase()
     {
-        $this->markTestIncomplete('not all assertions done yet');
-
         $propertyMapping = array(
-            'foo' => array('type' => 'integer', 'nullable' => false, 'min' => 1, 'max' => pow(2, 10)),
+            'foo' => array('type' => 'integer', 'nullable' => false, 'min' => 1),
         );
 
         $this->sutGetMapping
@@ -238,6 +252,105 @@ class AbstractEntityTest extends TestCase
         $sutMethod = new \ReflectionMethod($this->sutGetMapping, 'getMappingForProperty');
         $sutMethod->setAccessible(true);
 
+        $expected = array(
+            'type' => 'integer', 'nullable' => false, 'min' => 1, 'max' => PHP_INT_MAX, 'default' => null,
+        );
         $actual = $sutMethod->invoke($this->sutGetMapping, 'foo');
+        $this->assertEquals($expected, $actual);
+    }
+
+    /**
+     * @covers Odem\Entity\AbstractEntity::getMappingForProperty()
+     * @small
+     */
+    public function testGetMappingForPropertyWithPlainSuccessCase()
+    {
+        $propertyMapping = array(
+            'foo' => array('type' => 'integer', 'nullable' => false, 'min' => 1),
+        );
+
+        $this->sutGetMapping
+            ->expects($this->once())
+            ->method('getMapping')
+            ->will($this->returnValue($propertyMapping));
+
+        $sutMethod = new \ReflectionMethod($this->sutGetMapping, 'getMappingForProperty');
+        $sutMethod->setAccessible(true);
+
+        $expected = array(
+            'type' => 'integer', 'nullable' => false, 'min' => 1
+        );
+        $actual = $sutMethod->invoke($this->sutGetMapping, 'foo', true);
+        $this->assertEquals($expected, $actual);
+    }
+
+    /**
+     * @expectedException \Assert\InvalidArgumentException
+     * @expectedExceptionMessage Property [bar] not defined in this entity
+     * @covers Odem\Entity\AbstractEntity::getMappingForProperty()
+     * @small
+     */
+    public function testGetMappingForPropertyWithUndefPropertyErrorCase()
+    {
+        $propertyMapping = array(
+            'foo' => array('type' => 'integer', 'nullable' => false, 'min' => 1),
+        );
+
+        $this->sutGetMapping
+            ->expects($this->once())
+            ->method('getMapping')
+            ->will($this->returnValue($propertyMapping));
+
+        $sutMethod = new \ReflectionMethod($this->sutGetMapping, 'getMappingForProperty');
+        $sutMethod->setAccessible(true);
+
+        $sutMethod->invoke($this->sutGetMapping, 'bar');
+    }
+
+    /**
+     * @covers Odem\Entity\AbstractEntity::getEntityName()
+     * @small
+     */
+    public function testGetEntityNameSuccessCase()
+    {
+        $mockClassname = 'AbstractEntityMock';
+        $sutNothing = $this->getMockBuilder('Odem\Entity\AbstractEntity')
+            ->setMethods(array('_notExistingMethod_'))
+            ->disableOriginalConstructor()
+            ->setMockClassName($mockClassname)
+            ->getMockForAbstractClass();
+
+        $sutMethod = new \ReflectionMethod($sutNothing, 'getEntityName');
+        $sutMethod->setAccessible(true);
+
+        $actual = $sutMethod->invoke($sutNothing);
+
+        $this->assertEquals($mockClassname, $actual);
+    }
+
+    /**
+     * @covers Odem\Entity\AbstractEntity::doSet()
+     * @small
+     */
+    public function testDoSetIsFluidSuccessCase()
+    {
+        $propertyMapping = array(
+            'foo' => array('type' => 'integer', 'nullable' => false, 'min' => 1),
+        );
+        $propertyKeys = array_keys($propertyMapping);
+        $propertyKey = array_shift($propertyKeys);
+
+        $this->sutGetMappingForProperty
+            ->expects($this->once())
+            ->method('getMappingForProperty')
+            ->with($propertyKey)
+            ->will($this->returnValue($propertyMapping));
+
+        $sutMethod = new \ReflectionMethod($this->sutGetMappingForProperty, 'doSet');
+        $sutMethod->setAccessible(true);
+
+        $actual = $sutMethod->invoke($this->sutGetMappingForProperty, $propertyKey, 15);
+
+        $this->assertSame($this->sutGetMappingForProperty, $actual);
     }
 }
