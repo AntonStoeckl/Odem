@@ -4,16 +4,16 @@ namespace Odem\Assert;
 
 interface ProperyAssertionInterface
 {
-    public static function assertValueIsType($value, $type);
+    public function assertValueIsType($value, $type);
 
-    public static function assertValueIsValidType(array $propertyMapping, array $defaultMappings, $value);
+    public function assertValueIsValidType(array $propertyMapping, array $defaultMappings, $value);
 
-    public static function assertValidPropertyDefinition(
+    public function assertValidPropertyDefinition(
         array $mapping,
         array $defaultMappings,
         $property,
         $entityName
     );
 
-    public static function assertKnownPropertyType(array $defaultMappings, $type);
+    public function assertKnownPropertyType(array $defaultMappings, $type);
 }

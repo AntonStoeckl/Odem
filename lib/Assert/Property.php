@@ -13,13 +13,13 @@ class Property implements ProperyAssertionInterface
      * @param array $defaultMappings
      * @param mixed $value
      */
-    public static function assertValueIsValidType(array $propertyMapping, array $defaultMappings, $value)
+    public function assertValueIsValidType(array $propertyMapping, array $defaultMappings, $value)
     {
         $propertyType = $propertyMapping['type'];
 
-        static::assertKnownPropertyType($defaultMappings, $propertyType);
+        $this->assertKnownPropertyType($defaultMappings, $propertyType);
 
-        static::assertValueIsType($value, $propertyType);
+        $this->assertValueIsType($value, $propertyType);
     }
 
     /**
@@ -28,7 +28,7 @@ class Property implements ProperyAssertionInterface
      * @throws \Assert\InvalidArgumentException
      * @throws \UnexpectedValueException
      */
-    public static function assertValueIsType($value, $type)
+    public function assertValueIsType($value, $type)
     {
         switch ($type) {
             case 'integer':
@@ -67,7 +67,7 @@ class Property implements ProperyAssertionInterface
      * @param string $entityName
      * @throws \Assert\InvalidArgumentException
      */
-    public static function assertValidPropertyDefinition(array $mapping, array $defaultMappings, $property, $entityName)
+    public function assertValidPropertyDefinition(array $mapping, array $defaultMappings, $property, $entityName)
     {
         Assertion::keyExists(
             $property,
@@ -81,7 +81,7 @@ class Property implements ProperyAssertionInterface
             "Property [{$property}] has no field [type] in entity [{$entityName}]"
         );
 
-        static::assertKnownPropertyType($defaultMappings, $mapping[$property]['type']);
+        $this->assertKnownPropertyType($defaultMappings, $mapping[$property]['type']);
     }
 
     /**
@@ -89,7 +89,7 @@ class Property implements ProperyAssertionInterface
      * @param string $type
      * @throws \Assert\InvalidArgumentException
      */
-    public static function assertKnownPropertyType(array $defaultMappings, $type)
+    public function assertKnownPropertyType(array $defaultMappings, $type)
     {
         Assertion::choice(
             $type,

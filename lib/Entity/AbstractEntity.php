@@ -14,6 +14,7 @@ use Odem\Assert\ProperyAssertionInterface;
 abstract class AbstractEntity
 {
     const UNDEF = '__IS_NOT_DEFINED__';
+
     const PHP_MAX_STR_LEN = 2147483647;
 
     /** @var  ProperyAssertionInterface */
@@ -80,7 +81,7 @@ abstract class AbstractEntity
         Assertion::string($property, "Expected 'property' to be a string");
         Assertion::notEmpty($property, "Expected 'property' to be a not empty string");
 
-        PropertyAssertion::assertValidPropertyDefinition(
+        $this->getPropertyAssertions()->assertValidPropertyDefinition(
             $this->defaultMappings,
             $this->getMapping(),
             $property,
@@ -127,8 +128,8 @@ abstract class AbstractEntity
     protected function doSet($property, $value)
     {
         $propertyMapping = $this->getMappingForProperty($property);
-        $propertyAssertions = $this->getPropertyAssertions();
-        $propertyAssertions::assertValueIsValidType($propertyMapping, $this->defaultMappings, $value);
+        $this->getPropertyAssertions()
+            ->assertValueIsValidType($propertyMapping, $this->defaultMappings, $value);
 
         $this->data[$property] = $value;
 
@@ -153,7 +154,8 @@ abstract class AbstractEntity
 
         $itemType = $mapping[$property]['itemType'];
 
-        PropertyAssertion::assertValueIsType($value, $itemType);
+        $this->getPropertyAssertions()
+            ->assertValueIsType($value, $itemType);
 
         $this->data[$property][] = $value;
 

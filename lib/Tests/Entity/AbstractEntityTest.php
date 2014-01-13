@@ -4,6 +4,7 @@ namespace Odem\Tests\Entity;
 
 use Odem\Tests\TestCase;
 use Odem\Entity\AbstractEntity;
+use Odem\Assert\ProperyAssertionInterface;
 
 /**
  * Class AbstractEntityTest
@@ -33,6 +34,13 @@ class AbstractEntityTest extends TestCase
     protected $sutGetMappingForProperty;
 
     /**
+     * PropertyAssertionInterface mock with all methods mocked
+     *
+     * @var ProperyAssertionInterface|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $propertyAssertions;
+
+    /**
      * Set up test instances.
      */
     public function setUp()
@@ -49,6 +57,9 @@ class AbstractEntityTest extends TestCase
         $this->sutGetMappingForProperty = $this->getMockBuilder('Odem\Entity\AbstractEntity')
             ->setMethods(array('getMappingForProperty'))
             ->disableOriginalConstructor()
+            ->getMockForAbstractClass();
+
+        $this->propertyAssertions = $this->getMockBuilder('Odem\Assert\ProperyAssertionInterface')
             ->getMockForAbstractClass();
     }
 
@@ -332,25 +343,87 @@ class AbstractEntityTest extends TestCase
      * @covers Odem\Entity\AbstractEntity::doSet()
      * @small
      */
-    public function testDoSetIsFluidSuccessCase()
+    public function testDoSetSetsRightDataSuccessCase()
     {
+        // set the mocked propertyAssertions instance
+        $this->sutGetMappingForProperty->setPropertyAssertions($this->propertyAssertions);
+
+        // define the test data
         $propertyMapping = array(
             'foo' => array('type' => 'integer', 'nullable' => false, 'min' => 1),
         );
         $propertyKeys = array_keys($propertyMapping);
         $propertyKey = array_shift($propertyKeys);
+        $propertyValue = 15;
+        $defaultMappings = array(
+            'integer' => array(
+                'nullable' => true, 'min' => PHP_INT_MAX * -1, 'max' => PHP_INT_MAX, 'default' => null,
+            )
+        );
 
+        // assert that getMappingForProperty is called in sut
         $this->sutGetMappingForProperty
             ->expects($this->once())
             ->method('getMappingForProperty')
             ->with($propertyKey)
             ->will($this->returnValue($propertyMapping));
 
+        // assert that getMappingForProperty is called in sut's injected propertyAssertions instance
+        $this->propertyAssertions
+            ->expects($this->once())
+            ->method('assertValueIsValidType')
+            ->with($propertyMapping, $defaultMappings, $propertyValue);
+
+        // set the defaultMappings property in sut via reflection
+        $sutDefaultMappings = new \ReflectionProperty($this->sutGetMappingForProperty, 'defaultMappings');
+        $sutDefaultMappings->setAccessible(true);
+        $sutDefaultMappings->setValue($this->sutGetMappingForProperty, $defaultMappings);
+
+        // make sut's 'doSet' method accessible vie reflection
         $sutMethod = new \ReflectionMethod($this->sutGetMappingForProperty, 'doSet');
         $sutMethod->setAccessible(true);
 
-        $actual = $sutMethod->invoke($this->sutGetMappingForProperty, $propertyKey, 15);
+        // invoke sut's 'doSet' method
+        $sutMethod->invoke($this->sutGetMappingForProperty, $propertyKey, 15);
 
+        // assert value has been set
+        $this->assertAttributeEquals(
+            array($propertyKey => $propertyValue),
+            'data',
+            $this->sutGetMappingForProperty
+        );
+    }
+
+    /**
+     * @covers Odem\Entity\AbstractEntity::doSet()
+     * @small
+     */
+    public function testDoSetIsFluidSuccessCase()
+    {
+        // set the mocked propertyAssertions instance
+        $this->sutGetMappingForProperty->setPropertyAssertions($this->propertyAssertions);
+
+        // define the test data
+        $propertyMapping = array(
+            'foo' => array('type' => 'integer', 'nullable' => false, 'min' => 1),
+        );
+        $propertyKeys = array_keys($propertyMapping);
+        $propertyKey = array_shift($propertyKeys);
+        $propertyValue = 15;
+
+        // assert that getMappingForProperty is called in sut
+        $this->sutGetMappingForProperty
+            ->expects($this->once())
+            ->method('getMappingForProperty')
+            ->withAnyParameters()
+            ->will($this->returnValue($propertyMapping));
+
+        // make sut's 'doSet' method accessible vie reflection
+        $sutMethod = new \ReflectionMethod($this->sutGetMappingForProperty, 'doSet');
+        $sutMethod->setAccessible(true);
+
+        // assert fluid interface
+        $actual = $sutMethod->invoke($this->sutGetMappingForProperty, $propertyKey, $propertyValue);
         $this->assertSame($this->sutGetMappingForProperty, $actual);
     }
 }
