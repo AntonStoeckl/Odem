@@ -426,4 +426,164 @@ class AbstractEntityTest extends TestCase
         $actual = $sutMethod->invoke($this->sutGetMappingForProperty, $propertyKey, $propertyValue);
         $this->assertSame($this->sutGetMappingForProperty, $actual);
     }
+
+    /**
+     * @covers Odem\Entity\AbstractEntity::doAdd()
+     * @small
+     */
+    public function testDoAddAddsRightDataSuccessCase()
+    {
+        // set the mocked propertyAssertions instance
+        $this->sutGetMapping->setPropertyAssertions($this->propertyAssertions);
+
+        // define the test data
+        $propertyMapping = array(
+            'foo' => array('type' => 'array', 'nullable' => false, 'default' => [], 'itemType' => 'integer',)
+        );
+        $propertyKeys = array_keys($propertyMapping);
+        $propertyKey = array_shift($propertyKeys);
+        $propertyValue = 15;
+        $itemType = $propertyMapping[$propertyKey]['itemType'];
+
+        // assert that getMapping is called in sut
+        $this->sutGetMapping
+            ->expects($this->once())
+            ->method('getMapping')
+            ->will($this->returnValue($propertyMapping));
+
+        // assert that getMappingForProperty is called in sut's injected propertyAssertions instance
+        $this->propertyAssertions
+            ->expects($this->once())
+            ->method('assertValueIsType')
+            ->with($propertyValue, $itemType);
+
+        // make sut's 'doAdd' method accessible vie reflection
+        $sutMethod = new \ReflectionMethod($this->sutGetMapping, 'doAdd');
+        $sutMethod->setAccessible(true);
+
+        // invoke sut's 'doAdd' method
+        $sutMethod->invoke($this->sutGetMapping, $propertyKey, $propertyValue);
+
+        // assert value has been set
+        $this->assertAttributeEquals(
+            array($propertyKey => array($propertyValue)),
+            'data',
+            $this->sutGetMapping
+        );
+    }
+
+    /**
+     * @covers Odem\Entity\AbstractEntity::doAdd()
+     * @small
+     */
+    public function testDoAddIsFluidSuccessCase()
+    {
+        // set the mocked propertyAssertions instance
+        $this->sutGetMapping->setPropertyAssertions($this->propertyAssertions);
+
+        // define the test data
+        $propertyMapping = array(
+            'foo' => array('type' => 'array', 'nullable' => false, 'default' => [], 'itemType' => 'integer',)
+        );
+        $propertyKeys = array_keys($propertyMapping);
+        $propertyKey = array_shift($propertyKeys);
+        $propertyValue = 15;
+        $itemType = $propertyMapping[$propertyKey]['itemType'];
+
+        // assert that getMapping is called in sut
+        $this->sutGetMapping
+            ->expects($this->once())
+            ->method('getMapping')
+            ->will($this->returnValue($propertyMapping));
+
+        // assert that getMappingForProperty is called in sut's injected propertyAssertions instance
+        $this->propertyAssertions
+            ->expects($this->once())
+            ->method('assertValueIsType')
+            ->with($propertyValue, $itemType);
+
+        // make sut's 'doAdd' method accessible vie reflection
+        $sutMethod = new \ReflectionMethod($this->sutGetMapping, 'doAdd');
+        $sutMethod->setAccessible(true);
+
+        // assert fluid interface
+        $actual = $sutMethod->invoke($this->sutGetMapping, $propertyKey, $propertyValue);
+        $this->assertSame($this->sutGetMapping, $actual);
+    }
+
+    /**
+     * @expectedException \Assert\InvalidArgumentException
+     * @expectedExceptionMessage Adder function can only be called on properties of type array
+     * @covers Odem\Entity\AbstractEntity::doAdd()
+     * @small
+     */
+    public function testDoAddWithInvalidItemTypeErrorCase()
+    {
+        // define the test data
+        $propertyMapping = array(
+            'foo' => array('type' => 'integer', 'nullable' => false,)
+        );
+        $propertyKeys = array_keys($propertyMapping);
+        $propertyKey = array_shift($propertyKeys);
+        $propertyValue = 'foobar';
+
+        // assert that getMapping is called in sut
+        $this->sutGetMapping
+            ->expects($this->once())
+            ->method('getMapping')
+            ->will($this->returnValue($propertyMapping));
+
+        // make sut's 'doAdd' method accessible vie reflection
+        $sutMethod = new \ReflectionMethod($this->sutGetMapping, 'doAdd');
+        $sutMethod->setAccessible(true);
+
+        // invoke sut's 'doAdd' method
+        $sutMethod->invoke($this->sutGetMapping, $propertyKey, $propertyValue);
+    }
+
+    /**
+     * @covers Odem\Entity\AbstractEntity::doGet()
+     * @small
+     */
+    public function testDoGetReturnsRighDataForNotEmptyPropertySuccessCase()
+    {
+        // define the test data
+        $propertyKey = 'foobar';
+        $propertyValue = 333;
+
+        // make sut's 'doGet' method accessible vie reflection
+        $sutMethod = new \ReflectionMethod($this->sutNothing, 'doGet');
+        $sutMethod->setAccessible(true);
+
+        // set the data property in sut via reflection
+        $sutDefaultMappings = new \ReflectionProperty($this->sutNothing, 'data');
+        $sutDefaultMappings->setAccessible(true);
+        $sutDefaultMappings->setValue($this->sutNothing, array($propertyKey => $propertyValue));
+
+        // invoke sut's 'doAdd' method
+        $actual = $sutMethod->invoke($this->sutNothing, $propertyKey);
+
+        // assert right value was returned
+        $this->assertEquals($propertyValue, $actual);
+    }
+
+    /**
+     * @covers Odem\Entity\AbstractEntity::doGet()
+     * @small
+     */
+    public function testDoGetReturnsRighDataForEmptyPropertySuccessCase()
+    {
+        // define the test data
+        $propertyKey = 'foobar';
+
+        // make sut's 'doGet' method accessible vie reflection
+        $sutMethod = new \ReflectionMethod($this->sutNothing, 'doGet');
+        $sutMethod->setAccessible(true);
+
+        // invoke sut's 'doAdd' method
+        $actual = $sutMethod->invoke($this->sutNothing, $propertyKey);
+
+        // assert right value was returned
+        $this->assertNull($actual);
+    }
 }

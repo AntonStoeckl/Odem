@@ -93,13 +93,11 @@ abstract class AbstractEntity
                 $this->doSet($property, $params[0]);
                 break;
             case 'get':
+            case 'is':
                 $this->doGet($property);
                 break;
             case 'add':
                 $this->doAdd($property, $params[0]);
-                break;
-            case 'is':
-                $this->doIs($property);
                 break;
             default:
                 throw new \BadMethodCallException("Undefined method called: [{$method}]");
@@ -167,19 +165,6 @@ abstract class AbstractEntity
      * @return mixed
      */
     protected function doGet($property)
-    {
-        if (isset($this->data[$property]) || array_key_exists($property, $this->data)) {
-            return $this->data[$property];
-        }
-
-        return null;
-    }
-
-    /**
-     * @param string $property
-     * @return bool|null
-     */
-    protected function doIs($property)
     {
         if (isset($this->data[$property]) || array_key_exists($property, $this->data)) {
             return $this->data[$property];
