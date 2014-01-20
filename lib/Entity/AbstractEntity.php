@@ -4,7 +4,8 @@ namespace Odem\Entity;
 
 use Odem\Assert\Assertion;
 use Odem\Assert\Property as PropertyAssertion;
-use Odem\Assert\ProperyAssertionInterface;
+use Odem\Assert\PropertyAssertionInterface;
+use Odem\Entity\DefaultMappings\AbstractDefaultMappings;
 
 /**
  * Class AbstractEntity
@@ -13,33 +14,37 @@ use Odem\Assert\ProperyAssertionInterface;
  */
 abstract class AbstractEntity
 {
-    const UNDEF = '__IS_NOT_DEFINED__';
-
-    const PHP_MAX_STR_LEN = 2147483647;
-
-    /** @var  ProperyAssertionInterface */
+    /**
+     * @var  PropertyAssertionInterface
+     */
     protected $propertyAssertions;
 
-    /**  @var array */
-    protected $defaultMappings = array();
+    /**
+     * @var AbstractDefaultMappings
+     */
+    protected $defaultMappings;
 
-    /** @var array */
+    /**
+     * @var array
+     */
     protected $data = array();
 
     /**
      * The constructor.
-     * Initializes default mappings.
+     * Receives dependencies via injection.
+     *
+     * @param AbstractDefaultMappings $defaultMappings
      */
-    public function __construct()
+    public function __construct(AbstractDefaultMappings $defaultMappings)
     {
-        $this->addDefaultMappings();
+        $this->defaultMappings = $defaultMappings;
     }
 
     /**
-     * @param ProperyAssertionInterface $propertyAssertions
+     * @param PropertyAssertionInterface $propertyAssertions
      * @return $this
      */
-    public function setPropertyAssertions(ProperyAssertionInterface $propertyAssertions)
+    public function setPropertyAssertions(PropertyAssertionInterface $propertyAssertions)
     {
         $this->propertyAssertions = $propertyAssertions;
 
@@ -47,7 +52,7 @@ abstract class AbstractEntity
     }
 
     /**
-     * @return ProperyAssertionInterface
+     * @return PropertyAssertionInterface
      */
     public function getPropertyAssertions()
     {
@@ -82,7 +87,7 @@ abstract class AbstractEntity
         Assertion::notEmpty($property, "Expected 'property' to be a not empty string");
 
         $this->getPropertyAssertions()->assertValidPropertyDefinition(
-            $this->defaultMappings,
+            $this->defaultMappings->getAll(),
             $this->getMapping(),
             $property,
             $this->getEntityName()
@@ -127,7 +132,7 @@ abstract class AbstractEntity
     {
         $propertyMapping = $this->getMappingForProperty($property);
         $this->getPropertyAssertions()
-            ->assertValueIsValidType($propertyMapping, $this->defaultMappings, $value);
+            ->assertValueIsValidType($propertyMapping, $this->defaultMappings->getAll(), $value);
 
         $this->data[$property] = $value;
 
@@ -190,77 +195,9 @@ abstract class AbstractEntity
             return $propertyMapping;
         }
 
-        $mapping = array_merge($this->getDefaultMappingForType($propertyType), $propertyMapping);
+        $mapping = array_merge($this->defaultMappings->getForType($propertyType), $propertyMapping);
 
         return $mapping;
-    }
-
-    /**
-     * @param string $type
-     * @return array
-     * @throws \Assert\InvalidArgumentException
-     */
-    protected function getDefaultMappingForType($type)
-    {
-        Assertion::string($type, "Expected 'type' to be a string");
-        Assertion::notEmpty($type, "Expected 'type' to be not empty");
-        Assertion::keyExists($this->defaultMappings, $type, "No default mapping defined for type [{$type}] defined");
-
-        return $this->defaultMappings[$type];
-    }
-
-    /**
-     * @param string $type
-     * @param array $mapping
-     * @return $this
-     * @throws \Assert\InvalidArgumentException
-     */
-    protected function addDefaultMapping($type, array $mapping)
-    {
-        Assertion::string($type, "Expected 'type' to be a string");
-        Assertion::notEmpty($type, "Expected 'type' to be not empty");
-        Assertion::keyExists($mapping, 'nullable', "Mapping has no field [nullable]");
-        Assertion::keyNotExists($this->defaultMappings, $type, "Mapping for type [{$type}] already exists");
-
-        $this->defaultMappings[$type] = $mapping;
-
-        return $this;
-    }
-
-    /**
-     * Add default mappings
-     */
-    protected function addDefaultMappings()
-    {
-        $this->addDefaultMapping(
-            'integer',
-            array('nullable' => true, 'min' => PHP_INT_MAX * -1, 'max' => PHP_INT_MAX, 'default' => null,)
-        );
-
-        $this->addDefaultMapping(
-            'float',
-            array('nullable' => true, 'min' => PHP_INT_MAX * -1, 'max' => PHP_INT_MAX, 'default' => null,)
-        );
-
-        $this->addDefaultMapping(
-            'bool',
-            array('nullable' => false, 'default' => false,)
-        );
-
-        $this->addDefaultMapping(
-            'string',
-            array('nullable' => true, 'minLen' => 0, 'maxLen' => self::PHP_MAX_STR_LEN, 'default' => null,)
-        );
-
-        $this->addDefaultMapping(
-            'array',
-            array('nullable' => false, 'default' => [], 'itemType' => 'string',)
-        );
-
-        $this->addDefaultMapping(
-            'entity',
-            array('nullable' => true, 'default' => null, 'class' => static::UNDEF)
-        );
     }
 
     /**

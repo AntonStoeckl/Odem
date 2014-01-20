@@ -4,27 +4,14 @@ namespace Odem\Assert;
 
 /**
  * Class Property
+ *
  * @package Odem\Assert
  */
-class Property implements ProperyAssertionInterface
+class Property implements PropertyAssertionInterface
 {
     /**
-     * @param array $propertyMapping
-     * @param array $defaultMappings
-     * @param mixed $value
-     */
-    public function assertValueIsValidType(array $propertyMapping, array $defaultMappings, $value)
-    {
-        $propertyType = $propertyMapping['type'];
-
-        $this->assertKnownPropertyType($defaultMappings, $propertyType);
-
-        $this->assertValueIsType($value, $propertyType);
-    }
-
-    /**
-     * @param mixed $value
-     * @param string $type
+     * {@inheritdoc}
+     *
      * @throws \Assert\InvalidArgumentException
      * @throws \UnexpectedValueException
      */
@@ -59,12 +46,20 @@ class Property implements ProperyAssertionInterface
     }
 
     /**
-     * Assert that property has a valid definition in entity
+     * {@inheritdoc}
+     */
+    public function assertValueIsValidType(array $propertyMapping, array $defaultMappings, $value)
+    {
+        $propertyType = $propertyMapping['type'];
+
+        $this->assertKnownPropertyType($defaultMappings, $propertyType);
+
+        $this->assertValueIsType($value, $propertyType);
+    }
+
+    /**
+     * {@inheritdoc}
      *
-     * @param array  $mapping
-     * @param array  $defaultMappings
-     * @param string $property
-     * @param string $entityName
      * @throws \Assert\InvalidArgumentException
      */
     public function assertValidPropertyDefinition(array $mapping, array $defaultMappings, $property, $entityName)
@@ -85,8 +80,8 @@ class Property implements ProperyAssertionInterface
     }
 
     /**
-     * @param array  $defaultMappings
-     * @param string $type
+     * {@inheritdoc}
+     *
      * @throws \Assert\InvalidArgumentException
      */
     public function assertKnownPropertyType(array $defaultMappings, $type)
